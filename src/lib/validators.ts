@@ -3,7 +3,7 @@ const PIN_LOCKOUT_DURATION = 15 * 60 * 1000; // 15 minutes
 const pinAttempts: Map<string, { count: number; lockedUntil?: number }> = new Map();
 
 export function validatePIN(pin: string, ipAddress: string): boolean {
-  const correctPin = process.env.DASHBOARD_PIN || '1234';
+  const correctPin = process.env.NEXT_PUBLIC_DASHBOARD_PIN || process.env.DASHBOARD_PIN || '1234';
   
   // Check lockout
   const record = pinAttempts.get(ipAddress);
