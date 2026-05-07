@@ -99,9 +99,6 @@ export default function LoginPage() {
                 Restricted Access System
               </p>
             </div>
-            <p className="text-[10px] text-slate-600 font-bold">
-              Demo PIN: <span className="text-green-500/50">{process.env.NEXT_PUBLIC_DASHBOARD_PIN || '1234'}</span> (Internal Testing Only)
-            </p>
           </div>
         </div>
       </div>
