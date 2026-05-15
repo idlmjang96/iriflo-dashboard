@@ -99,6 +99,7 @@ export default function LoginPage() {
                 Restricted Access System
               </p>
             </div>
+            {/* Demo PIN display has been removed for security */}
           </div>
         </div>
       </div>
