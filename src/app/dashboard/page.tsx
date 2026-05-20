@@ -6,6 +6,7 @@ import ParetoChart from '@/components/charts/ParetoChart';
 import TrendChart from '@/components/charts/TrendChart';
 import StatusPieChart from '@/components/charts/StatusPieChart';
 import RecentActivity from '@/components/dashboard/RecentActivity';
+import UrgentAlertsDialog from '@/components/dashboard/UrgentAlertsDialog';
 import { 
   Activity, 
   CheckCircle2, 
@@ -23,6 +24,7 @@ import { useRouter } from 'next/navigation';
 
 export default function DashboardPage() {
   const [range, setRange] = useState<TimeRange>('all');
+  const [isUrgentModalOpen, setIsUrgentModalOpen] = useState(false);
   const { stats, loading } = useAnalytics(range);
   const router = useRouter();
 
@@ -42,7 +44,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-12">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2 text-green-600 mb-1">
@@ -51,6 +53,11 @@ export default function DashboardPage() {
           </div>
           <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
           <p className="text-slate-500 mt-1 font-medium">Monitoring real-time, performa SLA, dan efisiensi tim lapangan.</p>
+          <div className="flex flex-wrap items-center gap-2 pt-3">
+            <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-[10px] font-black uppercase tracking-widest text-slate-500 shadow-sm">
+              Periode: {range === 'all' ? 'Seluruh Waktu' : range === '7d' ? '7 Hari Terakhir' : range === '30d' ? '30 Hari Terakhir' : '1 Tahun Terakhir'}
+            </span>
+          </div>
         </div>
         <div className="flex bg-white p-1 rounded-xl border border-slate-200 shadow-sm">
           {(['7d', '30d', '1y', 'all'] as const).map((r) => (
@@ -70,7 +77,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5 -mt-2">
         <StatCard 
           title="SLA Compliance" 
           value={`${stats.performance.slaCompliance.toFixed(1)}%`} 
@@ -107,6 +114,7 @@ export default function DashboardPage() {
           trend="down"
           change="Critical"
           isAlert={stats.summary.urgentAlerts > 0}
+          onClick={() => setIsUrgentModalOpen(true)}
         />
       </div>
 
@@ -175,6 +183,12 @@ export default function DashboardPage() {
           <RecentActivity />
         </div>
       </div>
+
+      <UrgentAlertsDialog 
+        isOpen={isUrgentModalOpen}
+        onClose={() => setIsUrgentModalOpen(false)}
+        alerts={stats.urgentAlertData || []}
+      />
     </div>
   );
 }
@@ -188,9 +202,10 @@ interface StatCardProps {
   trend: 'up' | 'down' | 'neutral';
   color: 'green' | 'amber' | 'blue' | 'red';
   isAlert?: boolean;
+  onClick?: () => void;
 }
 
-function StatCard({ title, value, subValue, change, icon: Icon, trend, color, isAlert }: StatCardProps) {
+function StatCard({ title, value, subValue, change, icon: Icon, trend, color, isAlert, onClick }: StatCardProps) {
   const colors: Record<string, string> = {
     green: 'bg-green-50 text-green-700 border-green-200',
     amber: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -199,7 +214,12 @@ function StatCard({ title, value, subValue, change, icon: Icon, trend, color, is
   };
 
   return (
-    <div className={`bg-white border p-6 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 group ${isAlert ? 'border-red-200 ring-2 ring-red-50' : 'border-slate-200'}`}>
+    <div 
+      onClick={onClick}
+      className={`bg-white border p-6 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 group ${
+        isAlert ? 'border-red-200 ring-2 ring-red-50 animate-pulse' : 'border-slate-200'
+      } ${onClick ? 'cursor-pointer hover:border-red-400 hover:ring-4 hover:ring-red-100' : ''}`}
+    >
       <div className="flex justify-between items-start mb-4">
         <div className={`p-3.5 rounded-2xl ${colors[color]} border transition-transform group-hover:rotate-6`}>
           <Icon size={20} />

@@ -4,6 +4,16 @@ import { SLA_TARGETS } from '@/constants/dashboard';
 
 export type TimeRange = '7d' | '30d' | '1y' | 'all';
 
+export interface UrgentAlertItem {
+  id: string;
+  woNumber: string;
+  location: string;
+  category: string;
+  status: string;
+  createdAt: Date | null;
+  hoursWaiting: number;
+}
+
 export function useAnalytics(range: TimeRange = 'all') {
   const { data: workOrders, loading, error } = useWorkOrders();
 
@@ -14,7 +24,8 @@ export function useAnalytics(range: TimeRange = 'all') {
       paretoData: [],
       trendData: [],
       statusData: [],
-      mandorStats: []
+      mandorStats: [],
+      urgentAlertData: []
     };
 
     // Filter work orders based on range for performance metrics
@@ -103,14 +114,31 @@ export function useAnalytics(range: TimeRange = 'all') {
     })).sort((a, b) => b.completed - a.completed);
 
     // Urgent Alerts: Pending more than 48 hours (from the filtered set)
-    const urgentAlerts = filteredWorkOrders.filter(wo => {
+    const urgentAlertData = filteredWorkOrders.filter(wo => {
       const isPending = wo.status === 'Menunggu' || wo.status === 'Menunggu Approval';
       if (!isPending || !wo.createdAt) return false;
       
       const createdDate = new Date(wo.createdAt).getTime();
       const hoursDiff = (now.getTime() - createdDate) / (1000 * 60 * 60);
       return hoursDiff > 48; 
-    }).length;
+    }).map(wo => {
+      const createdDate = wo.createdAt ? new Date(wo.createdAt) : null;
+      const hoursWaiting = createdDate
+        ? (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60)
+        : 0;
+
+      return {
+        id: wo.id,
+        woNumber: wo.woNumber || wo.nomor || 'NO-ID',
+        location: wo.location || 'Unknown Location',
+        category: wo.category || 'Uncategorized',
+        status: wo.status || 'Menunggu',
+        createdAt: createdDate,
+        hoursWaiting,
+      };
+    }).sort((a, b) => b.hoursWaiting - a.hoursWaiting);
+
+    const urgentAlerts = urgentAlertData.length;
 
     // Pareto data (Categories)
     const categoryCounts: Record<string, number> = {};
@@ -195,7 +223,8 @@ export function useAnalytics(range: TimeRange = 'all') {
       paretoData,
       trendData,
       statusData,
-      mandorStats
+      mandorStats,
+      urgentAlertData
     };
   }, [workOrders, range]);
 
